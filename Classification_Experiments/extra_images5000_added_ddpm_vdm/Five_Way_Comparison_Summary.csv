@@ -1,0 +1,5 @@
+Model,DDPM extra 5000 images added,LDM  extra 5000 images added,Original,DDPM extra 5000 images added(%)
+Convnext-Tiny,82.28,91.77,60.13,22.15
+ResNet-18,83.54,92.41,65.82,17.720000000000013
+Swin-T,82.28,90.51,69.62,12.659999999999997
+ViT-Tiny,80.38,87.97,74.05,6.329999999999998

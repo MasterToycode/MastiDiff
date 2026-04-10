@@ -1,0 +1,82 @@
+# =====================================================
+# 🧠 原始数据集（Base Dataset）
+# =====================================================
+Base_datasets/
+datasets/
+
+# =====================================================
+# 🔬 扩散/增强数据集（所有生成数据）
+# =====================================================
+Base_datasets_augmented*/
+ldm_augmented*/
+*_augmented*/
+*_augmentation*/
+*_synthetic*/
+*_generated*/
+
+# =====================================================
+# 🧪 DDPM / LDM / VARIANCE 实验输出（全部忽略）
+# =====================================================
+
+# DDPM udder experiments
+ddpm-udder-results*/
+ddpm_variance_*/
+
+# LDM experiments
+ldm_udder_*/
+ldm_*/
+
+# variance / diffusion experiments (future-proof)
+variance_*/
+*_variance_*/
+
+
+# =====================================================
+# 🧠 分类器实验（全部不上传）
+# =====================================================
+
+
+# 分类器不同数据版本实验
+Classification_Experiments/Base_Dataset_*/
+Classification_Experiments/Augmented_*/
+Classification_Experiments/ddpm_vdm*/
+Classification_Experiments/Three_Way_Comparison/
+Classification_Experiments/Final_Analysis_Report_*/
+Classification_Experiments/Five_Way_Comparison
+
+
+
+# =====================================================
+# 📊 训练结果 / 推理结果 / 实验输出
+# =====================================================
+results/
+outputs/
+inference_results*/
+test_results*/
+*_results*/
+exp*/
+
+# =====================================================
+# 🧰 Python缓存
+# =====================================================
+__pycache__/
+*.pyc
+*.pkl
+
+# =====================================================
+# 🖥️ IDE & 环境
+# =====================================================
+.vscode/
+.idea/
+
+# =====================================================
+# 📝 日志
+# =====================================================
+*.log
+logs/
+
+# =====================================================
+# 📦 系统文件
+# =====================================================
+.DS_Store
+Thumbs.db

@@ -1,0 +1,14 @@
+[
+    {
+        "timestamp": "20251229_140043",
+        "model": "ddpm-udder-results6/ema_model_epoch_119",
+        "fid": 75.77527618408203,
+        "is_mean": 3.3983616828918457,
+        "is_std": 0.1957700550556183,
+        "params": {
+            "beta_end": 0.018,
+            "clip": false,
+            "steps": 100
+        }
+    }
+]
