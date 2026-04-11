@@ -23,19 +23,19 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 # --- 1. 配置类 ---
 class Config:
     data_root = "./datasets"
-    output_dir = "ddpm_variance_13"  
-    initial_checkpoint = r"ddpm_variance_12\checkpoint_epoch_59"
+    output_dir = "ddpm_variance_20"  
+    initial_checkpoint = r"ddpm_variance_19\checkpoint_epoch_39"
     image_size = 256
     train_batch_size = 13
-    num_epochs = 100
-    learning_rate = 1e-5
+    num_epochs = 50
+    learning_rate = 8e-6
     lr_warmup_steps = 100
     num_classes = 4
     uncond_label = 4
     p_uncond = 0.1
     save_model_epochs = 10
     save_image_epochs = 10
-    weight_offset=0.005
+    weight_offset=0.05
     
     # DDPM 像素空间配置
     in_channels = 3  # RGB图像
@@ -72,8 +72,9 @@ class Config:
     clip_sample = True
     
     # 采样配置
-    cfg = 2
-    sampler = "DDPMScheduler"  
+    cfg = 5
+    sampler = "DDPMScheduler" 
+    variance_scale = 0.00001 
 
 config = Config()
 
@@ -123,7 +124,7 @@ class LabelEmbedding(nn.Module):
         x = self.embedding(labels)
         x = self.dropout(x)
         # ✅ 先加噪声，再送入 MLP
-        noise = torch.randn_like(x) * 0.0001
+        noise = torch.randn_like(x) * 0.001
         x = x + noise
         tokens = self.mlp(x).view(-1, self.num_tokens, self.embedding_dim)
         tokens = self.dropout(tokens)
@@ -163,9 +164,9 @@ class PerceptualLoss(nn.Module):
         feat3_pred = self.stage3(feat2_pred)
         feat3_target = self.stage3(feat2_target) 
         
-        return 1.0 * F.l1_loss(feat1_pred, feat1_target) + \
-               0.8 * F.l1_loss(feat2_pred, feat2_target) + \
-               0.6 * F.l1_loss(feat3_pred, feat3_target)
+        return F.l1_loss(feat1_pred, feat1_target) + \
+               F.l1_loss(feat2_pred, feat2_target) + \
+               F.l1_loss(feat3_pred, feat3_target)
 
 
 class LaplacianLoss(nn.Module):
@@ -315,7 +316,7 @@ def train_loop():
         num_training_steps=num_training_steps,
     )
 
-    ema_model = EMAModel(model.parameters(), decay=0.999, model_cls=UNet2DConditionModel, model_config=model.config,inv_gamma=1.0, power=3/4)  
+    ema_model = EMAModel(model.parameters(), decay=0.99, model_cls=UNet2DConditionModel, model_config=model.config,inv_gamma=1.0, power=3/4)  
     ema_model.to(accelerator.device)
 
     # --- 预计算噪声调度器静态张量（优化GPU利用率）---
@@ -448,10 +449,10 @@ def train_loop():
                 progress = epoch / Config.num_epochs
 
                 # sigmoid schedule（最稳）
-                lambda_vlb = 0.001 * torch.sigmoid(torch.tensor((progress - 0.5) * 10)).item()
+                lambda_vlb = 0.000005 * torch.sigmoid(torch.tensor((progress - 0.5) * 10)).item()
 
                 # clamp
-                lambda_vlb = min(lambda_vlb, 0.001)
+                lambda_vlb = min(lambda_vlb, 0.000005)
 
                 # 3. 计算 Lsimple (噪声预测 MSE)
                 snr = _snr[timesteps]
@@ -488,8 +489,8 @@ def train_loop():
                 edge_loss = F.mse_loss(pred_edge_img, true_edge_img)
 
                 aux_loss = (
-                    0.0001 * perceptual_loss_val +
-                    0.001 * edge_loss
+                    0.000005 * perceptual_loss_val +
+                    0.00005 * edge_loss
                 ).mean()
 
                 tloss = loss + aux_loss
@@ -577,7 +578,7 @@ def save_ldm_sample(accelerator, model, ema_model, epoch, config, label_proj):
         clip_sample=config.clip_sample
     )
     # 采样步数：DDPM 建议设多一点，如果为了快，可以用 DDIMScheduler (写法类似)
-    scheduler.set_timesteps(200) 
+    scheduler.set_timesteps(250) 
 
     unwrapped_model = accelerator.unwrap_model(model)
     
@@ -617,7 +618,7 @@ def save_ldm_sample(accelerator, model, ema_model, epoch, config, label_proj):
             
             # 对方差预测做 CFG (方差通常不需要太强的引导，直接取 cond 或者也做微量引导)
             var_uncond, var_cond = var_pred_full.chunk(2)
-            var_pred = var_cond # 采样时通常直接信任有条件分支的方差预测
+            var_pred = var_cond * Config.variance_scale
             
             # 重新拼回 6 通道，交给 scheduler 处理
             final_output = torch.cat([noise_pred, var_pred], dim=1)
@@ -628,6 +629,7 @@ def save_ldm_sample(accelerator, model, ema_model, epoch, config, label_proj):
     # 结果后处理
     images = (x_t + 1) / 2
     images = images.clamp(0, 1)
+    images = images ** 0.7 
     utils.save_image(images, f"{config.output_dir}/sample_epoch_{epoch}.png", nrow=2)
     
     # 权重恢复
@@ -635,6 +637,11 @@ def save_ldm_sample(accelerator, model, ema_model, epoch, config, label_proj):
         p.data.copy_(orig_p.to(device))
     label_proj.train()
     print(f"采样完成：使用 DDPMScheduler (Learned Variance), CFG={config.cfg}")
+
+
+
+
+
 
 if __name__ == "__main__":
     # Windows 上设置多进程启动方法为 spawn，确保 DataLoader 正常工作
