@@ -2,7 +2,23 @@ import os
 import torch
 import torch.nn as nn
 from torchvision import utils
-from diffusers import UNet2DConditionModel, DPMSolverMultistepScheduler
+from diffusers import UNet2DConditionModel, DDPMScheduler
+from tqdm.auto import tqdm
+
+class Config:
+    # Scheduler 细节
+    beta_schedule = "squaredcos_cap_v2"
+    clip_sample = True
+    # 采样配置
+    cfg = 6
+    sampler = "DDPMScheduler" 
+    variance_scale = 0.00001 
+    NUM_CLASSES = 4
+    CHECKPOINT_PATH = r"ddpm_variance_21\checkpoint_epoch_49" # 替换为你最新的权重文件夹路径
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    image_size=256
+    uncond_label = 4
+config = Config()
 
 # --- 1. 必须保留的标签投影类 (需与训练代码一致) ---
 class LabelEmbedding(nn.Module):
@@ -26,64 +42,73 @@ class LabelEmbedding(nn.Module):
         return tokens + self.pos
 
 # --- 2. 采样配置 ---
-CHECKPOINT_PATH = r"ddpm_variance_8\checkpoint_epoch_19" # 替换为你最新的权重文件夹路径
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-CFG_SCALE = 1.5  # 如果之前图片“炸了”，尝试调低到 1.0 或 1.5
-IMAGE_SIZE = 256
-NUM_CLASSES = 4
-UNCOND_LABEL = 4  # 训练时设定的无条件标签
 
 @torch.no_grad()
 def run_test_sample():
     # 1. 加载模型
-    print(f"正在从 {CHECKPOINT_PATH} 加载模型...")
-    model = UNet2DConditionModel.from_pretrained(CHECKPOINT_PATH).to(DEVICE)
+    print(f"正在从 {Config.CHECKPOINT_PATH} 加载模型...")
+    model = UNet2DConditionModel.from_pretrained(Config.CHECKPOINT_PATH).to(Config.DEVICE)
     model.eval()
 
     # 2. 加载标签投影层
-    label_proj = LabelEmbedding(NUM_CLASSES + 1, embedding_dim=256).to(DEVICE)
-    label_proj.load_state_dict(torch.load(os.path.join(CHECKPOINT_PATH, "label_proj.pt"), map_location=DEVICE))
+    label_proj = LabelEmbedding(Config.NUM_CLASSES + 1, embedding_dim=256).to(Config.DEVICE)
+    label_proj.load_state_dict(torch.load(os.path.join(Config.CHECKPOINT_PATH, "label_proj.pt"), map_location=Config.DEVICE))
     label_proj.eval()
 
     # 3. 配置采样器 (DPM-Solver 速度快且稳定)
     # 注意：训练时用 squaredcos_cap_v2，采样器也必须匹配
-    scheduler = DPMSolverMultistepScheduler(
+    scheduler = DDPMScheduler(
         num_train_timesteps=1000,
-        beta_schedule="squaredcos_cap_v2", 
-        algorithm_type="dpmsolver++"
+        beta_schedule="squaredcos_cap_v2",
+        prediction_type="epsilon",
+        variance_type="learned_range",
+        clip_sample=True
     )
-    scheduler.set_timesteps(50) # 50步采样
-
-    # 4. 准备条件 (每个类别生成一张图)
-    classes = torch.arange(NUM_CLASSES, device=DEVICE)
-    cond_emb = label_proj(classes)
-    uncond_labels = torch.full((NUM_CLASSES,), UNCOND_LABEL, device=DEVICE)
+    scheduler.set_timesteps(100) 
+    # 备份与准备
+    model.eval()
+    label_proj.eval()
+    labels = torch.tensor([0, 1, 2, 3], device=Config.DEVICE)
+    x_t = torch.randn(4, 3, Config.image_size, Config.image_size, device=Config.DEVICE)
+    
+    # 准备 CFG 嵌入
+    uncond_labels = torch.full((4,), Config.uncond_label, device=Config.DEVICE)
+    cond_emb = label_proj(labels)
     uncond_emb = label_proj(uncond_labels)
 
-    # 5. 生成初始噪声
-    x_t = torch.randn(NUM_CLASSES, 3, IMAGE_SIZE, IMAGE_SIZE, device=DEVICE)
-
     # 6. 采样循环
-    for t in scheduler.timesteps:
-        # 扩展输入以支持 CFG
-        latent_model_input = torch.cat([x_t] * 2)
-        # 注意：这里拼接了 cond 和 uncond
-        combined_emb = torch.cat([cond_emb, uncond_emb])
-        t_input = torch.full((NUM_CLASSES * 2,), t, device=DEVICE, dtype=torch.long)
-
-        # 模型预测 (输出6通道，只取前3通道噪声)
-        output = model(latent_model_input, t_input, encoder_hidden_states=combined_emb).sample
-        eps_cond, eps_uncond = output[:NUM_CLASSES, :3], output[NUM_CLASSES:, :3]
-        
-        # 应用 CFG
-        noise_pred = eps_uncond + CFG_SCALE * (eps_cond - eps_uncond)
-
-        # 步进
-        x_t = scheduler.step(noise_pred, t, x_t).prev_sample
+    for t in tqdm(scheduler.timesteps, desc="Sampling"):
+        with torch.no_grad():
+            # 这里的输入是 4 个样本，我们做 CFG，所以扩展为 8
+            latent_model_input = torch.cat([x_t] * 2)
+            prompt_embeds = torch.cat([uncond_emb, cond_emb]) # 习惯上 uncond 在前
+            timesteps = torch.full((8,), t, device=Config.DEVICE, dtype=torch.long)
+            
+            # 模型一次性跑 8 个样本的预测 (输出 6 通道)
+            model_output = model(latent_model_input, timesteps, encoder_hidden_states=prompt_embeds).sample
+            
+            # --- 核心：处理 6 通道 CFG ---
+            # 拆分噪声部分和方差部分
+            noise_pred_full, var_pred_full = model_output.chunk(2, dim=1)
+            
+            # 对噪声预测做 CFG 引导
+            noise_uncond, noise_cond = noise_pred_full.chunk(2)
+            noise_pred = noise_uncond + config.cfg * (noise_cond - noise_uncond)
+            
+            # 对方差预测做 CFG (方差通常不需要太强的引导，直接取 cond 或者也做微量引导)
+            var_uncond, var_cond = var_pred_full.chunk(2)
+            var_pred = var_cond * Config.variance_scale
+            
+            # 重新拼回 6 通道，交给 scheduler 处理
+            final_output = torch.cat([noise_pred, var_pred], dim=1)
+            
+            # 2. 使用 DDPM step 计算。它内部会根据 6 通道自动计算真实方差
+            x_t = scheduler.step(final_output, t, x_t).prev_sample
 
     # 7. 后处理并保存
     images = ((x_t + 1) / 2).clamp(0, 1)
-    save_name = f"test_cfg1_{CFG_SCALE}.png"
+    #images = images ** 0.9 
+    save_name = f"test_cfg_{Config.cfg}.png"
     utils.save_image(images, save_name, nrow=2)
     print(f"测试图已保存至: {save_name}")
 

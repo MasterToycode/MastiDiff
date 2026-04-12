@@ -23,8 +23,8 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 # --- 1. 配置类 ---
 class Config:
     data_root = "./datasets"
-    output_dir = "ddpm_variance_20"  
-    initial_checkpoint = r"ddpm_variance_19\checkpoint_epoch_39"
+    output_dir = "ddpm_variance_21"  
+    initial_checkpoint = r"ddpm_variance_20\checkpoint_epoch_49"
     image_size = 256
     train_batch_size = 13
     num_epochs = 50
