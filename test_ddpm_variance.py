@@ -10,11 +10,11 @@ class Config:
     beta_schedule = "squaredcos_cap_v2"
     clip_sample = True
     # 采样配置
-    cfg = 6
+    cfg = 5
     sampler = "DDPMScheduler" 
     variance_scale = 0.00001 
     NUM_CLASSES = 4
-    CHECKPOINT_PATH = r"ddpm_variance_21\checkpoint_epoch_49" # 替换为你最新的权重文件夹路径
+    CHECKPOINT_PATH = r"ddpm_variance_22\checkpoint_epoch_29" # 替换为你最新的权重文件夹路径
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     image_size=256
     uncond_label = 4
@@ -107,8 +107,8 @@ def run_test_sample():
 
     # 7. 后处理并保存
     images = ((x_t + 1) / 2).clamp(0, 1)
-    #images = images ** 0.9 
-    save_name = f"test_cfg_{Config.cfg}.png"
+    images = images ** 0.8 
+    save_name = f"test_1cfg_{Config.cfg}.png"
     utils.save_image(images, save_name, nrow=2)
     print(f"测试图已保存至: {save_name}")
 

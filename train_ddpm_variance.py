@@ -23,12 +23,12 @@ os.environ["HF_DATASETS_OFFLINE"] = "1"
 # --- 1. 配置类 ---
 class Config:
     data_root = "./datasets"
-    output_dir = "ddpm_variance_21"  
-    initial_checkpoint = r"ddpm_variance_20\checkpoint_epoch_49"
+    output_dir = "ddpm_variance_22"  
+    initial_checkpoint = r"ddpm_variance_21\checkpoint_epoch_49"
     image_size = 256
     train_batch_size = 13
     num_epochs = 50
-    learning_rate = 8e-6
+    learning_rate = 5e-5
     lr_warmup_steps = 100
     num_classes = 4
     uncond_label = 4
@@ -489,8 +489,8 @@ def train_loop():
                 edge_loss = F.mse_loss(pred_edge_img, true_edge_img)
 
                 aux_loss = (
-                    0.000005 * perceptual_loss_val +
-                    0.00005 * edge_loss
+                    0.00001 * perceptual_loss_val +
+                    0.0001 * edge_loss
                 ).mean()
 
                 tloss = loss + aux_loss
@@ -578,7 +578,7 @@ def save_ldm_sample(accelerator, model, ema_model, epoch, config, label_proj):
         clip_sample=config.clip_sample
     )
     # 采样步数：DDPM 建议设多一点，如果为了快，可以用 DDIMScheduler (写法类似)
-    scheduler.set_timesteps(250) 
+    scheduler.set_timesteps(100) 
 
     unwrapped_model = accelerator.unwrap_model(model)
     
@@ -629,7 +629,7 @@ def save_ldm_sample(accelerator, model, ema_model, epoch, config, label_proj):
     # 结果后处理
     images = (x_t + 1) / 2
     images = images.clamp(0, 1)
-    images = images ** 0.7 
+    images = images ** 0.8 
     utils.save_image(images, f"{config.output_dir}/sample_epoch_{epoch}.png", nrow=2)
     
     # 权重恢复
@@ -637,7 +637,6 @@ def save_ldm_sample(accelerator, model, ema_model, epoch, config, label_proj):
         p.data.copy_(orig_p.to(device))
     label_proj.train()
     print(f"采样完成：使用 DDPMScheduler (Learned Variance), CFG={config.cfg}")
-
 
 
 
