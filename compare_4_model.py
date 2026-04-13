@@ -24,7 +24,7 @@ class Config:
     batch_size = 32
     num_workers = 4      
     epochs = 50                        
-    base_lr = 5e-5                     # 分类头学习率
+    base_lr = 1e-4                     # 分类头学习率
     backbone_lr_mult = 0.2             # 主干网络学习率倍率 
     weight_decay = 0.05                # 适当的 AdamW 权重衰减
     patience = 12                      
@@ -130,8 +130,8 @@ if __name__ == '__main__':
 
     train_set = datasets.ImageFolder(Config.train_dir, train_transform)
     test_set = datasets.ImageFolder(Config.test_dir, test_transform)
-    train_loader = DataLoader(train_set, batch_size=Config.batch_size, shuffle=True, num_workers=Config.num_workers, pin_memory=True)
-    test_loader = DataLoader(test_set, batch_size=Config.batch_size, shuffle=False, num_workers=Config.num_workers, pin_memory=True)
+    train_loader = DataLoader(train_set, batch_size=Config.batch_size, shuffle=True, num_workers=Config.num_workers,persistent_workers=True, pin_memory=True)
+    test_loader = DataLoader(test_set, batch_size=Config.batch_size, shuffle=False, num_workers=Config.num_workers, persistent_workers=True,pin_memory=True)
 
     scaler = torch.amp.GradScaler('cuda') 
 
