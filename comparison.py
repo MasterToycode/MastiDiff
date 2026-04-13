@@ -7,7 +7,8 @@ import os
 DATASETS = {
     "Original": "Classification_Experiments/Base_Dataset_1/results",
     "DDPM extra 5000 images added": "Classification_Experiments/Augmented_Dataset_4_2/results", 
-    "LDM  extra 5000 images added": "Classification_Experiments/Augmented_Dataset_vdm_2/results"
+    "LDM  extra 5000 images added": "Classification_Experiments/Augmented_Dataset_vdm_2/results",
+    "DDPM VARIANCE  extra 5000 images added": "Classification_Experiments/Augmented_Dataset_ddpm_variance_V2/results"
 }
 
 
@@ -19,7 +20,7 @@ MODELS = {
 }
 
 
-SAVE_DIR = "Classification_Experiments/extra_images5000_added_ddpm_vdm"
+SAVE_DIR = "Classification_Experiments/extra_images5000_added_ddpm_vdm_variance"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 # ================= Data Extraction =================
@@ -142,21 +143,21 @@ def create_summary_table(results_df):
         if 'LDM extra 5000 images added' in pivot_df.columns:
             pivot_df['DDPM extra 5000 images added(%)'] = pivot_df['LDM extra 5000 images added'] - pivot_df['Original']
         
-        if 'extra 2000 images added' in pivot_df.columns:
-            pivot_df['extra 2000 images added(%)'] = pivot_df['extra 2000 images added'] - pivot_df['Original']
+        if 'DDPM VARIANCE  extra 5000 images added' in pivot_df.columns:
+            pivot_df['DDPM VARIANCE  extra 5000 images added(%)'] = pivot_df['DDPM VARIANCE  extra 5000 images added'] - pivot_df['Original']
         
         if 'extra 5000 images added' in pivot_df.columns:
             pivot_df['extra 5000 images added(%)'] = pivot_df['extra 5000 images added'] - pivot_df['Original']
     
     # Save as CSV
-    csv_path = os.path.join(SAVE_DIR, "Five_Way_Comparison_Summary.csv")
+    csv_path = os.path.join(SAVE_DIR, "DDPM_VARIACNE_LDM_Data_Augmentation_Comparison_Summary.csv")
     pivot_df.to_csv(csv_path)
     
     print(f"📋 Summary table saved to: {csv_path}")
     
     # Print table
     print("\n" + "="*60)
-    print("Five-Way Data Augmentation Comparison Summary")
+    print("DDPM_VARIACNE_LDM Data Augmentation Comparison Summary")
     print("="*60)
     print(pivot_df.to_string())
     

@@ -52,8 +52,8 @@ def split_dataset(source_dir, target_dir, split_ratio=0.8):
 if __name__ == "__main__":
     # 设置路径
     # 假设你的当前目录下有 fenlei 文件夹
-    SRC = "D:/biye_sheji/fenlei" 
-    DST = "./Base_datasets"
+    SRC = "datasets/train" 
+    DST = "./new_base_datasets"
     
     # 执行切分
     split_dataset(SRC, DST, split_ratio=0.8)

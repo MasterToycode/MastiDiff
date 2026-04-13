@@ -123,7 +123,7 @@ def calculate_lpips_for_all_classes(base_dir, num_pairs_per_class=1000):
 
 if __name__ == "__main__":
     # 计算整个数据集的LPIPS
-    base_dir = r"Base_datasets_augmented_3\train"
+    base_dir = r"ddpm_augmented_v1\train"
     results = calculate_lpips_for_all_classes(base_dir, num_pairs_per_class=1000)
     
     if results:

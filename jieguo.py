@@ -13,15 +13,15 @@ from torchvision import datasets, transforms, models
 class Config:
     # 实验配置 - 可以根据需要修改这些值
     base_experiment = "Base_Dataset_2"          # 原始数据集实验
-    aug_experiment = "Augmented_Dataset_ddpm_variance"    # 数据增强实验
-    save_dir = "Classification_Experiments/Final_Analysis_Report_ddpm_variance_1" 
+    aug_experiment = "Augmented_Dataset_ddpm_variance_V2"    # 数据增强实验
+    save_dir = "Classification_Experiments/Final_Analysis_Report_ddpm_variance_V2" 
     
     # 模型配置 - 与 compare_4_model.py 保持一致
     model_ids = ["resnet18", "swin_t", "vit_tiny", "convnext_tiny"]
     model_names = ["ResNet-18", "Swin-T", "ViT-Tiny", "ConvNeXt-Tiny"]
     
     # 测试集路径
-    test_dataset_path = "./Base_datasets/test"
+    test_dataset_path = "./new_base_datasets/test"
     
     # 设备配置
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -47,14 +47,14 @@ def get_model(name):
         m = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
         # 在分类层前添加 dropout
         m.fc = nn.Sequential(
-            nn.Dropout(0.5),
+            nn.Dropout(0.4),
             nn.Linear(m.fc.in_features, 4)
         )
     elif name == "vgg16":
         m = models.vgg16_bn(weights=models.VGG16_BN_Weights.IMAGENET1K_V1)
         # 在分类器最后一层前添加 dropout
         m.classifier[6] = nn.Sequential(
-            nn.Dropout(0.5),
+            nn.Dropout(0.4),
             nn.Linear(4096, 4)
         )
     elif name == "swin_t":
@@ -68,14 +68,14 @@ def get_model(name):
         m = models.vit_b_16(weights=models.ViT_B_16_Weights.IMAGENET1K_V1)
         # 在分类头前添加 dropout
         m.heads.head = nn.Sequential(
-            nn.Dropout(0.5),
+            nn.Dropout(0.4),
             nn.Linear(m.heads.head.in_features, 4)
         )
     elif name == "convnext_tiny":
         m = models.convnext_tiny(weights=models.ConvNeXt_Tiny_Weights.IMAGENET1K_V1)
         # 在分类器最后一层前添加 dropout
         m.classifier[2] = nn.Sequential(
-            nn.Dropout(0.5),
+            nn.Dropout(0.4),
             nn.Linear(m.classifier[2].in_features, 4)
         )
     return m.to(Config.device)
@@ -133,7 +133,7 @@ def run_full_analysis():
 
         # 绘制两条柱子：原始数据 vs 扩充数据
         rects1 = plt.bar(x - width/2, summary_df['Base'], width, label='Original Dataset', color='#C0C4C8')
-        rects2 = plt.bar(x + width/2, summary_df['Augmented'], width, label='LPM Augmented', color='#2E86C1')
+        rects2 = plt.bar(x + width/2, summary_df['Augmented'], width, label='DDPM_VARIANCE Augmented', color='#2E86C1')
 
         # 添加装饰
         plt.ylabel('Best Test Accuracy (%)', fontsize=12)

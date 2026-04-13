@@ -13,25 +13,25 @@ import numpy as np
 # 1. 配置类：增加训练策略参数
 # ==========================================
 class Config:
-    exp_phase = "Augmented_Dataset_ddpm_variance_V2"  
+    exp_phase = "Augmented_Dataset_ddpm_variance_V4"  
     root_dir = f"Classification_Experiments/{exp_phase}"
     train_dir = "./ddpm_augmented_v1/train" 
-    test_dir = "./Base_datasets/test"
+    test_dir = "./new_base_datasets/test"
     
-    model_list = ["resnet18", "swin_t", "vit_tiny", "convnext_tiny"] 
+    model_list = ["swin_t","convnext_tiny"] 
     img_size = 224
     
     batch_size = 32
     num_workers = 4      
     epochs = 50                        
     base_lr = 1e-4                     # 分类头学习率
-    backbone_lr_mult = 0.2             # 主干网络学习率倍率 
+    backbone_lr_mult = 1             # 主干网络学习率倍率 
     weight_decay = 0.05                # 适当的 AdamW 权重衰减
     patience = 12                      
     
     # 数据增强/防过拟合
-    mixup_alpha = 0.2                  
-    label_smoothing = 0.1              
+    mixup_alpha = 0.05                  
+    label_smoothing = 0.05              
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -56,7 +56,7 @@ def mixup_criterion(criterion, pred, y_a, y_b, lam):
 # ==========================================
 # 3. 模型获取与“语义化”冻结逻辑
 # ==========================================
-def get_model(name, freeze_level=1):
+def get_model(name, freeze_level=0):
     """
     freeze_level: 
     0: 全微调 (Fine-tuning)
@@ -84,7 +84,7 @@ def get_model(name, freeze_level=1):
                 
     elif name == "vit_tiny": # torchvision 里的 vit_b_16
         m = models.vit_b_16(weights=models.ViT_B_16_Weights.IMAGENET1K_V1)
-        m.heads.head = nn.Sequential(nn.Dropout(0.4), nn.Linear(m.heads.head.in_features, 4))
+        m.heads.head = nn.Sequential(nn.Dropout(0.5), nn.Linear(m.heads.head.in_features, 4))
         if freeze_level >= 1:
             # 冻结前 6 个 Transformer Encoder Block
             for param in m.conv_proj.parameters(): param.requires_grad = False
@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
     for model_name in Config.model_list:
         print(f"\n🚀 模型训练开始: {model_name}")
-        model = get_model(model_name, freeze_level=1)
+        model = get_model(model_name, freeze_level=0)
         
         # 差异化学习率设置
         backbone_params = []
