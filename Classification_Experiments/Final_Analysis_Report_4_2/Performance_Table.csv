@@ -1,5 +1,0 @@
-Model,Base,Augmented
-ResNet-18,68.99,83.54
-Swin-T,70.89,82.28
-ViT-Tiny,76.58,80.38
-ConvNeXt-Tiny,70.89,82.28
