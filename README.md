@@ -603,12 +603,12 @@ To reproduce the key experiments from this study:
 If you use this codebase or build upon this work, please cite:
 
 ```bibtex
-@article{your_thesis_2024,
+@article{your_thesis_2026,
   title={Diffusion-Based Data Augmentation for Medical Image Classification: A Comparative Study of DDPM, DDPM-variance, and Latent Diffusion Models},
-  author={Your Name},
+  author={Junze Ye},
   journal={Graduate Thesis},
-  year={2024},
-  publisher={Your University}
+  year={2026},
+  publisher={NJAU}
 }
 ```
 
@@ -628,7 +628,7 @@ If you use this codebase or build upon this work, please cite:
 
 ## Acknowledgments
 
-This work was conducted as part of a graduate thesis at [Your University]. Special thanks to the open-source community for the Diffusers library and pretrained models that made this research possible.
+This work was conducted as part of a graduate thesis at [NJAU]. Special thanks to the open-source community for the Diffusers library and pretrained models that made this research possible.
 
 ## License
 
@@ -636,5 +636,5 @@ This project is available for academic research purposes. For commercial use, pl
 
 ---
 
-*Last Updated: April 2024*  
+*Last Updated: April 2026*  
 *Project Status: Completed Research*
