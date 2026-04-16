@@ -12,14 +12,14 @@ from concurrent.futures import ThreadPoolExecutor
 # ================= 1. 配置与加速开关 =================
 class AugConfig:
     original_data_dir = "./Base_datasets/train" 
-    output_dir = "./ddpm_augmented_v1/train"
+    output_dir = "./ldm_and_ddpm_augmented/train"
     model_path = r"ddpm_variance_22\checkpoint_epoch_9" 
     
     target_count = 5000  
     num_inference_steps = 50        
     guidance_scale = 5.0            
     image_size = 256                
-    batch_size = 16                 # 5070 Ti 性能强劲，建议直接从 32 起步
+    batch_size = 16                 
     variance_scale = 0.00001        
     
     device = "cuda"
@@ -155,7 +155,7 @@ def run():
                         x_t = scheduler.step(final_out, t, x_t).prev_sample
 
                     # 图像后处理 (转回 FP32 保证画质)
-                    imgs = ((x_t.float() + 1) / 2).clamp(0, 1) ** 0.7
+                    imgs = ((x_t.float() + 1) / 2).clamp(0, 1) ** 0.8
                     imgs_np = (imgs.cpu().permute(0, 2, 3, 1).numpy() * 255).astype("uint8")
                     
                     # 异步提交保存任务，不阻塞下一波显卡计算

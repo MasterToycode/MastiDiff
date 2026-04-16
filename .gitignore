@@ -14,6 +14,7 @@ ldm_augmented*/
 *_synthetic*/
 *_generated*/
 new_base_datasets/
+hybrid_final_5000_*/
 
 # =====================================================
 # 🧪 DDPM / LDM / VARIANCE 实验输出（全部忽略）

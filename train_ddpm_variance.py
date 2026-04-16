@@ -123,7 +123,7 @@ class LabelEmbedding(nn.Module):
     def forward(self, labels):
         x = self.embedding(labels)
         x = self.dropout(x)
-        # ✅ 先加噪声，再送入 MLP
+        #先加噪声，再送入 MLP
         noise = torch.randn_like(x) * 0.001
         x = x + noise
         tokens = self.mlp(x).view(-1, self.num_tokens, self.embedding_dim)
