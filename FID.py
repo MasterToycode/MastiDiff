@@ -156,4 +156,4 @@ history.append(json_data)
 with open(history_file, "w", encoding="utf-8") as jf:
     json.dump(history, jf, indent=4, ensure_ascii=False)
 
-print(f"📊 实验结果已追加至: {history_file} (当前累计 {len(history)} 条记录)")
+print(f"📊 实验结果已追加至: {history_file} (当前累计 {len(history)} 条记录)")  #经典的输出
