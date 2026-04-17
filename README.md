@@ -6,7 +6,7 @@
 
 ## Abstract
 
-This project implements and compares three generations of diffusion probabilistic models for medical image synthesis and data augmentation: **Standard DDPM**, **DDPM with learned variance prediction**, and **Latent Diffusion Models (LDM)**. The primary objective is to evaluate the effectiveness of synthetic data augmentation for improving classification performance on a 4-class udder ultrasound image dataset. Comprehensive experiments demonstrate that data augmentation with diffusion models significantly enhances downstream classifier accuracy across multiple backbone architectures.
+This project implements and compares three generations of diffusion probabilistic models for medical image synthesis and data augmentation: **Standard DDPM**, **DDPM with learned variance prediction**, and **Latent Diffusion Models (LDM)**. The primary objective is to evaluate the effectiveness of synthetic data augmentation for improving classification performance on a 4-class udder ultrasound image dataset. Comprehensive experiments demonstrate that data augmentation with diffusion models significantly enhances downstream classifier accuracy across multiple backbone architectures. Additionally, we explore **mixed-data augmentation** strategies that combine samples from different generative models to leverage complementary strengths.
 
 ---
 
@@ -39,6 +39,7 @@ The generated synthetic images are used to augment training data for downstream 
 - Implementation of three diffusion model variants for medical image synthesis
 - Comprehensive evaluation of diffusion-based data augmentation for ultrasound classification
 - Analysis of the relationship between generative quality metrics (FID, LPIPS) and downstream classification performance
+- **Mixed-data augmentation experiments** exploring complementary effects of combining LDM and DDPM-variance generated samples
 - Open-source codebase for reproducible research in medical image augmentation
 
 ---
@@ -222,6 +223,9 @@ Four augmentation scales were tested to study the effect of synthetic data quant
 | **Base-5000** | **5000** | **DDPM (Model 1)** | **Full augmentation** |
 | DDPM-variance-5000 | 5000 | DDPM-variance (Model 2) | Improved model comparison |
 | LDM-5000 | 5000 | LDM (Model 3) | Latent space efficiency |
+| Mixed-LDM-0.2 | 5000 | LDM (20%) + DDPM-variance (80%) | Complementary effects study |
+| Mixed-LDM-0.5 | 5000 | LDM (50%) + DDPM-variance (50%) | Balanced fusion analysis |
+| Mixed-LDM-0.8 | 5000 | LDM (80%) + DDPM-variance (20%) | LDM-dominant optimization |
 
 ### 4.4 Evaluation Protocol
 
@@ -393,6 +397,61 @@ These visualizations confirm that the learned label embeddings form a semantical
 
 ---
 
+## 5.6 Mixed-Data Augmentation Experiments
+
+### 5.6.1 Experimental Design and Rationale
+
+Recognizing the complementary strengths of different diffusion models, we conducted mixed-data augmentation experiments to investigate whether combining samples from multiple generative models could yield superior classification performance. The experimental design addresses:
+
+- **Single-model limitations**: LDM offers fast sampling and high visual fidelity but limited diversity; DDPM-Variance provides excellent diversity but slower sampling and small-sample instability
+- **Complementary effects**: By mixing samples from both models, we aim to leverage LDM's global coherence and DDPM-Variance's edge preservation capabilities
+
+### 5.6.2 Experiment Configuration
+
+Three mixed-data groups were created with different LDM-to-DDPM-Variance ratios (where `a` = LDM proportion):
+
+| Group | Ratio (LDM:DDPM-Var) | Description | Target Total |
+|-------|----------------------|-------------|--------------|
+| **A (a=0.2)** | 20:80 | DDPM-Variance dominant, LDM for FID correction | 5000/class |
+| **B (a=0.5)** | 50:50 | Balanced fusion for feature coverage | 5000/class |
+| **C (a=0.8)** | 80:20 | LDM dominant, DDPM-Variance for diversity boost | 5000/class |
+
+**Methodology**: 
+1. Start with DDPM-Variance augmented set (5000 images/class) as baseline
+2. Incrementally replace samples with LDM-generated images at specified ratios
+3. Maintain consistent base data subsets for fair comparison
+
+### 5.6.3 Performance Results
+
+Results from `mixed_data_Comparison_Summary.csv` show mixed-data augmentation outperforms single-model approaches:
+
+| Model | DDPM-Var Only | LDM Only | a=0.2 | a=0.5 | a=0.8 |
+|-------|---------------|----------|-------|-------|-------|
+| ConvNeXt-Tiny | 95.05% | 91.77% | 95.05% | **96.15%** | **97.80%** |
+| ResNet-18 | 92.31% | 92.41% | 93.41% | 95.05% | 95.05% |
+| Swin-T | 94.51% | 90.51% | **95.60%** | 93.96% | 94.51% |
+| ViT-Tiny | 90.11% | 87.97% | **92.86%** | 90.66% | 91.76% |
+
+### 5.6.4 Key Findings
+
+1. **Best Overall Performance**: ConvNeXt-Tiny with a=0.8 achieves **97.80% accuracy** - the highest across all experiments in this study
+2. **Model-Specific Preferences**:
+   - ConvNeXt-Tiny benefits from LDM-dominant mixes (97.80% at a=0.8)
+   - Swin-T and ViT-Tiny perform best with DDPM-Variance-dominant mixes (95.60% and 92.86% at a=0.2)
+   - ResNet-18 shows balanced improvement across mixes
+3. **Complementary Benefits**: Mixed data consistently outperforms single-model augmentation, validating the hypothesis that LDM and DDPM-Variance have complementary strengths
+4. **Practical Implications**: For medical image augmentation, optimal mixing ratios depend on the target classifier architecture
+
+### 5.6.5 Visualization
+
+![Mixed Data Comparison Chart](Classification_Experiments/mixed_data/ddpm_vdm_Bar_Chart.png)
+*Figure: Comprehensive bar chart comparing all augmentation strategies including mixed-data experiments. Shows performance advantages of mixed-data augmentation over single-model approaches.*
+
+![Classification Accuracy vs. LDM Ratio](Classification_Experiments/mixed_data/mixed_data.png)
+*Figure: Multi-series line chart showing classification accuracy as a function of LDM mixing ratio (Alpha). Demonstrates how different classifier architectures respond to varying proportions of LDM and DDPM-Variance samples, with ConvNeXt-Tiny achieving peak performance at α=0.8 (80% LDM + 20% DDPM-Var).*
+
+---
+
 ## 6. Project Structure
 
 The project follows a well-organized directory structure designed for reproducibility and clarity:
@@ -429,6 +488,7 @@ ddpm/
 │       ├── Final_Analysis_Report_ddpm_variance_V2/ # Final analysis for Model 2
 │       ├── Final_Analysis_Report_vdm_2/     # Final analysis for Model 3
 │       ├── label_test/                      # Label embedding visualizations
+│       ├── mixed_data/                       # Mixed-data experiment results (LDM + DDPM-Var)
 │       └── extra_images5000_added_ddpm_vdm_variance/ # Final comparison results
 │
 ├── Datasets
@@ -473,6 +533,7 @@ ddpm/
 
 #### Special Directories:
 - `Classification_Experiments/label_test/`: Visualization of attention mechanisms and label embeddings in Models 2 & 3
+- `Classification_Experiments/mixed_data/`: Mixed-data experiment results (LDM + DDPM-Var combinations)
 - `Classification_Experiments/extra_images5000_added_ddpm_vdm_variance/`: Final experimental results comparison
 
 ---
