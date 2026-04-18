@@ -12,14 +12,15 @@ This project implements and compares three generations of diffusion probabilisti
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Background and Related Work](#background-and-related-work)
-3. [Methodology](#methodology)
-4. [Experimental Setup](#experimental-setup)
-5. [Results and Analysis](#results-and-analysis)
-6. [Project Structure](#project-structure)
-7. [Usage Instructions](#usage-instructions)
-8. [Citation](#citation)
+1. [Introduction](#1-introduction)
+2. [Background and Related Work](#2-background-and-related-work)
+3. [Methodology](#3-methodology)
+4. [Experimental Setup](#4-experimental-setup)
+5. [Results and Analysis](#5-results-and-analysis)
+    - 5.6 [Mixed-Data Augmentation Experiments](#56-mixed-data-augmentation-experiments)
+6. [Project Structure](#6-project-structure)
+7. [Usage Instructions](#7-usage-instructions)
+8. [Citation](#8-citation)
 
 ---
 
