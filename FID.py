@@ -1,4 +1,4 @@
-import torch
+import torch            #导入包
 import os
 import numpy as np
 from diffusers import UNet2DModel, DDIMScheduler
