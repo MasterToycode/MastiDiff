@@ -666,7 +666,7 @@ If you use this codebase or build upon this work, please cite:
 
 ```bibtex
 @article{your_thesis_2026,
-  title={Diffusion-Based Data Augmentation for Medical Image Classification: A Comparative Study of DDPM, DDPM-variance, and Latent Diffusion Models},
+  title={RESEARCH ON DIFFUSION-BASED IMAGE GENERATION ALGORITHMS FOR BOVINE UDDER MASTITIS},
   author={Junze Ye},
   journal={Undergraduate Thesis},
   year={2026},
